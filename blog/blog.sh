@@ -75,7 +75,7 @@ commit=$(grep -m 1 ^commit= "$draft")   && commit="${commit#commit=}"
 
 [ -z "$title" ] || [ -z "$post" ] && echo "Draft title and post cannot be empty" >&2 && return 3
 
-safe_title=$(echo "$title" | sed "y/ /-/")
+safe_title=$(echo "$title" | sed "y/ /-/; s/+/-plus/g" | tr 'A-Z' 'a-z' | tr -d -c 'A-Za-z0-9''-_')
 link_prefix="$post_prefix$safe_title"
 title_line_num=$(sed -n "/^$title\s\+[0-9]\+\$/ {=; q}" "$title_list")
 page_title="$page_title_prefix$title"
@@ -92,7 +92,7 @@ page_title="$page_title_prefix$title"
     # Fix Part 1's page title, title, and listings on indexes
     sed -i "s/<title>$page_title<\/title>/<title>$page_title--Part 1<\/title>/" "$link_prefix-1.html" &&
     sed -i "s/<a href=\"$link_prefix-1.html\">$title<\/a>/<a href=\"$series_link\">$title<\/a> <span>Part 1<\/span>/" "$link_prefix-1.html" &&
-    sed -i "s/<a href=\"$link_prefix-1.html\">$title<\/a>/<a href=\"$link_prefix-1.html\">$title <span>Part 1<\/span><\/a>/" "$post_index" &&
+    sed -i -s "s/<a href=\"$link_prefix-1.html\">$title<\/a>/<a href=\"$link_prefix-1.html\">$title <span>Part 1<\/span><\/a>/" "$post_index" "$tag_index" "$tag_prefix"* &&
 
     page_title="$page_title--Part $new_count" &&
     sed -i -e "$title_line_num"a"$title $new_count" -e "$title_line_num"d "$title_list"
@@ -116,13 +116,13 @@ prev_part=""; title_span=""; [ "$title_count" -ne 0 ] &&
 # Add title heading, date heading, post, and commit
 sed -i "s/<!--title-->/<h1><a href=\"$series_link\">$title<\/a>$title_span<\/h1>\n<h3>$publish_date<\/h3>/" "$page_link"
 echo "$post" > newpost; sed -i -e "/<!--post-->/r newpost" -e "/<!--post-->/d" "$page_link"; rm newpost
-[ -n "$commit" ] && sed -i "s/<!--commit-->/<p><a class=\"commit\" href=\"$commit\">$commit_msg<\/a><\/p>/" "$page_link"
+[ -n "$commit" ] && sed -i "s~<!--commit-->~<p><a class=\"commit\" href=\"$commit\" target=\"_blank\">$commit_msg<\/a><\/p>~" "$page_link"
 
 # Add tags, linking each to its page, add each tag to tag list alphabetically
 num_tags=$(echo "$tags" | tr -cd ',' | wc -c); num_tags=$((num_tags + 1))
 i=1; tag=$(echo "$tags" | cut -d ',' "-f$i")
 while [ -n "$tags" ] && [ ! "$i" -gt "$num_tags" ]; do
-    tag_link=$(echo "$tag_prefix$tag.html" | sed "y/ /-/")
+    tag_link=$(echo "$tag_prefix$tag.html" | sed "y/ /-/; s/+/-plus/g" | tr 'A-Z' 'a-z' | tr -d -c 'A-Za-z0-9''-_')
     sed -i "/<!--tags-->/i\ \ \ \ <li><a href=\"$tag_link\">$tag<\/a><\/li>" "$page_link"
     if [ -z "$(grep -x "$tag" "$tag_list")" ]; then
         echo "$tag" >> "$tag_list" && sort -f -o "$tag_list" "$tag_list"
