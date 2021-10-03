@@ -1,28 +1,29 @@
 #!/bin/dash
-# usage:    edit_mass_html_tag [options]
-#           -t = tag to edit
-#           -e = file(s) to edit
-#           -i = input file with desired tag to apply
+# usage: edit_mass_html_tag [options]
+#   -t = tag to edit
+#   -e = file(s) to edit
+#   -i = input file with desired tag to apply
 tag="header"
 edit="*.html"
 input="index.html"
-while getopts t:e:i: flag   # Set values from command line arguments
-do
+verbose=0;
+while getopts t:e:i:v: flag; do # Set values from command line arguments
     case "${flag}" in
         t) tag=${OPTARG};;
         e) edit=${OPTARG};;
         i) input=${OPTARG};;
+        v) verbose=${OPTARG};;
     esac
 done
 
-# Get tag to apply from input file, and save it to a temporary file
-sed -n "1,/<$tag>/!{ /<\/$tag>/,/<$tag>/!p; }" "$input" > tag_to_apply.tmp
-
 # Edit all files, skipping the input file
-for file in $edit
-do
+[ "$verbose" -gt 1 ] && echo "Applying <$tag> tag from $input"
+tmp="edit_mass_html_tag.tmp"
+for file in $edit; do
     [ "$file" != "$input" ] &&
-        sed -i "1,/<$tag>/!{ /<\/$tag>/,/<$tag>/!d; }" "$file" &&
-        sed -i "/<$tag>/r tag_to_apply.tmp" "$file";
+        sed -n "1,/<$tag/ { /<$tag/b; p}" "$file" > "$tmp" &&
+        sed -n "/<$tag/,/<\/$tag>/p" "$input" >> "$tmp" &&
+        sed -n "/<\/$tag>/,\$ { /<\/$tag>/b; p}" "$file" >> "$tmp" &&
+        mv "$tmp" "$file" &&
+        [ "$verbose" -gt 0 ] && echo "Modified $file"
 done
-rm tag_to_apply.tmp
