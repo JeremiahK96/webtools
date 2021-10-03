@@ -1,0 +1,12 @@
+blog/index.html
+blog/main.css
+
+blog/blog.html
+blog/blogtags.html
+blog/blogtitles.html
+
+blog/blog-*
+blog/blogtag-*
+
+blog/drafts
+blog/published
