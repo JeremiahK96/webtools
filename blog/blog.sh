@@ -122,7 +122,8 @@ echo "$post" > newpost; sed -i -e "/<!--post-->/r newpost" -e "/<!--post-->/d" "
 num_tags=$(echo "$tags" | tr -cd ',' | wc -c); num_tags=$((num_tags + 1))
 i=1; tag=$(echo "$tags" | cut -d ',' "-f$i")
 while [ -n "$tags" ] && [ ! "$i" -gt "$num_tags" ]; do
-    tag_link=$(echo "$tag_prefix$tag.html" | sed "y/ /-/; s/+/-plus/g" | tr 'A-Z' 'a-z' | tr -d -c 'A-Za-z0-9''-_')
+    safe_tag=$(echo "$tag" | sed "y/ /-/; s/+/-plus/g" | tr 'A-Z' 'a-z' | tr -d -c 'A-Za-z0-9''-_')
+    tag_link="$tag_prefix$safe_tag.html"
     sed -i "/<!--tags-->/i\ \ \ \ <li><a href=\"$tag_link\">$tag<\/a><\/li>" "$page_link"
     if [ -z "$(grep -x "$tag" "$tag_list")" ]; then
         echo "$tag" >> "$tag_list" && sort -f -o "$tag_list" "$tag_list"
